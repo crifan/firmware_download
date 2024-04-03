@@ -1,0 +1,800 @@
+<?xml version='1.0' encoding="utf-8"?>
+
+<!DOCTYPE chapter
+[
+
+<!ENTITY % crl_ent PUBLIC "crl.ent" "http://www.crifan.com/files/res/docbook/entity/crl.ent">
+%crl_ent;
+
+]>
+
+<chapter    xml:id="ch03_download_method"
+        xmlns="http://docbook.org/ns/docbook"
+        xmlns:xl="http://www.w3.org/1999/xlink"
+        xmlns:xi="http://www.w3.org/2001/XInclude"
+        xmlns:ns5="http://www.w3.org/1998/Math/MathML"
+        xmlns:ns4="http://www.w3.org/1999/xhtml"
+        xmlns:ns3="http://www.w3.org/2000/svg"
+        xmlns:ns="http://docbook.org/ns/docbook">
+<title>固件烧写方式</title>
+<abstract></abstract>
+<para>固件开发方式，这里讨论的主要有两种。</para>
+<para>一种是开发过程中，产品发布之前，用到的一些方式。</para>
+<para>另外一种是，产品发布之后，产品已经运行了系统了，此时，如何在线动态地更新固件，实现系统升级的功能。</para>
+<para>先列出不同的分类：</para>
+<table id="tbl.methods_to_burn"><title>嵌入式开发中固件烧录的方式</title>
+    <tgroup cols="3">
+        <colspec colnum="1" colname="col1" colwidth="4*" />
+        <colspec colnum="2" colname="col2" colwidth="4*" />
+        <colspec colnum="3" colname="col3" colwidth="8*" />
+        <tbody>
+            <row>
+                <entry morerows="2" valign="middle">开发过程中，固件烧写方式</entry>
+                <entry>不需要烧写kernel和rootfs的方式</entry>
+                <entry>即直接通过tftp,nfs等方式挂在kernel和rootfs的方式</entry>
+            </row>
+            <row>
+                <entry colname="col2" morerows="1" valign="middle">将kernel，rootfs，uboot等烧写到存储介质上的方式</entry>
+                <entry colname="col3" >一步到位的方式（直接通过工具烧写文件到对应存储介质上）</entry>
+            </row>
+            <row>
+                <entry colname="col3" >两步到位的方式（先将数据先写入到Uboot中，再用uboot中的命令把数据写到存储介质上）</entry>
+            </row>
+            <row>
+                <entry >产品发布后，动态升级系统的方式</entry>
+                <entry namest="col2" nameend="col3" align="center" valign="middle">即，通过读写对应的Linux下的设备节点，实现更新固件</entry>
+            </row>
+        </tbody>
+    </tgroup>
+</table>
+<para>下面就详细讨论这两种过程中所用到的固件升级方式。</para>
+
+<sect1 xml:id="before_and_during_dev_how_burn"><title>开发前期或者开发过程中，固件的烧写方式</title>
+    <para>此处介绍的是，在开发过程中，如何实现固件更新，开发调试，根据是否一定要将新版的固件，烧写到存储介质上，可以分两种：</para>
+    <itemizedlist>
+        <listitem>一种是不需要烧写kernel和rootfs的方式；</listitem>
+        <listitem>另外一种是，需要把新版本的固件，即uboot，kernel，rootfs，烧写到存储介质上的。</listitem>
+    </itemizedlist>
+    
+    <sect2 xml:id="no_burn_kernel_and_rootfs"><title>不需要烧写kernel和rootfs的方式</title>
+        <para>此种做法，在实际开发中，还是有一些人会用到的。</para>
+        <para>其背景是，嵌入式开发中，相对普通上层软件开发，每次新编译出一个版本的软件，都要很麻烦地烧录到对应的存储介质，比如Nor Flash上，然后给开发板上电，继续开始调试开发，而不能像开发上层PC端软件，在IDE中，编译一下，点击运行，即可看到最新结果。</para>
+        <para>所以，嵌入式开发中，开发的效率显得很低，其中一个方法，可以先对避开此问题，避免每次都要重新烧写新编译的程序的问题，那就是，对于新版本的kernel和rootfs，分别通过tftp或NFS挂在kernel，通过NFS挂在rootfs，的方式，重新编译一个新版本的kernel或者是rootfs时，每次都不用重新烧写，只需要把对应的文件，放到对应的tftp或者NFS的文件夹下面即可。</para>
+        <para>此法详细做法相关的部分内容，下面会涉及，故此处不做太多探讨。而且真的详细讨论的话，超出了此文的范畴。</para>
+        <para>此处，只是对于此法进行概要说明：</para>
+        <orderedlist numeration="arabic" >
+            <listitem>目标
+                <para>实现kernel通过tftp挂载，rootfs通过nfs挂载的方式，实现高效率的嵌入式开发</para>
+            </listitem>
+            
+            <listitem>前提
+                <orderedlist>
+                    <listitem>硬件
+                        <orderedlist>
+                            <listitem>开发板上有网卡</listitem>
+                            <listitem>网卡已连接到一个路由或交换机，并且PC端，即提供tftp和nfs的服务器端，也连到此网络，开发板和PC端，同属于一个局域网段。</listitem>
+                        </orderedlist>
+                    </listitem>
+                    <listitem>软件
+                        <orderedlist>
+                            <listitem>PC端运行了tftp服务，新编译的kernel文件，放在tftp的根目录下</listitem>
+                            <listitem>PC端运行了nfs服务，所用的Linux内涵，也设置并启用了对应的nfs服务，编译好的rootfs，放在nfs服务的根目录下。</listitem>
+                        </orderedlist>
+                    </listitem>
+                </orderedlist>
+            </listitem>
+            
+            <listitem>如何操作
+                <orderedlist>
+                    <listitem>uboot中，通过tftp mem_addr kernel_file的方式去加载内核</listitem>
+                    <listitem>内核运行起来后，通过NFS去挂在rootfs</listitem>
+                    <listitem>正常加载rootfs后，就可以像普通的Linux开发一样，通过串口，输入命令操作Linux了</listitem>
+                </orderedlist>
+            </listitem>
+            
+            <listitem>优缺点
+                <itemizedlist>
+                    <listitem>优点
+                        <para>免去了每次新编译的kernel和rootfs，都要重新烧写这一麻烦的事情</para>
+                    </listitem>
+                    <listitem>缺点
+                        <itemizedlist>
+                            <listitem>很明显，如果开发中，涉及到对应的网络驱动的调试等，内核的NFS服务的调试等，即本身所用到的网络功能都是要调试的对象，那就不能用此法了</listitem>
+                            <listitem>另外，网络加载文件的速度，一般都是不错的，但是也不排除，有时候会受其他PC端某个网络资源占用太多的程序的影响</listitem>
+                            <listitem>而网络加载文件的稳定性，不同的环境，差异很大。多数情况下，都是很稳定的，但是也有人遇到各种原因，导致不稳定的，所以此时此法即使可用，但用起来也会很郁闷</listitem>
+                        </itemizedlist>
+                    </listitem>
+                </itemizedlist>
+            </listitem>
+        </orderedlist>
+    </sect2>
+    
+    <sect2 xml:id="burn_kernel_rootfs_uboot_to_storage"><title>将kernel，rootfs，uboot等烧写到存储介质上的方式</title>
+        <para>需要将对应的文件，烧写到存储介质上，此时，有两种方法：</para>
+        <itemizedlist>
+            <listitem>一种是一步到位的方式，即直接通过某工具将文件写入到存储介质上。</listitem>
+            <listitem>另外一种是两步到位的方式，先通过某种方式把文件下载到Uboot中，再通过Uboot中的命令，去把数据写入到存储介质上。</listitem>
+        </itemizedlist>
+        
+        <sect3 xml:id="single_step_tool_burn_to_storage"><title>一步到位：直接通过工具烧写文件到对应存储介质上</title>
+            <para>目前常见的存储介质，主要有Nor Flash和Nand Flash，所以下面主要讲解如何烧写Nor Flash还是Nand Flash。</para>
+            <para>另外，还有一些存储介质是SD/MMC卡等，其烧写数据，我用过的烧写数据方式是，一种是在Uboot中，把下载到内存中的数据，写入到SD/MMC卡中，或者在板子已经跑起来了Linux的环境下，把数据写入到SD/MMC卡中。</para>
+            
+            <sect4 xml:id="burn_to_nor_flash"><title>Nor Flash</title>
+                <para>由于Nor Flash接口比较常见和通用，而且有专门的规范定义了对应的操作命令，所以，目前有很多工具，只要你板子上的Nor Flash是常见的Nor Flash，那么这些工具，多数都可以直接拿过来用，直接将文件烧写到Nor Flash中。</para>
+                
+                <orderedlist>
+                    <listitem>目标
+                        <para>通过某些工具，连接上开发板或直接接上对应的硬件芯片Nor Flash，直接通过工具烧写文件到目标存储介质（即对应的硬件芯片）上。即不需要开发板上面运行Uboot或者Linux系统。用工具直接操作即可。</para>
+                    </listitem>
+                    
+                    <listitem>前提
+                        <itemizedlist>
+                            <listitem>硬件
+                                <itemizedlist>
+                                    <listitem>你所使用的Nor Flash，如果是那种通用的（其实大多数都是通用的），工具所支持的</listitem>
+                                    <listitem>开发板具有对应的硬件接口，比如JTAG接口</listitem>
+                                    <listitem>你自己有对应的硬件工具，比如JLink硬件</listitem>
+                                </itemizedlist>
+                            </listitem>
+                            
+                            <listitem>软件
+                                <itemizedlist>
+                                    <listitem>对应的软件工具支持对应的Nor Flash芯片，比如J-Flash，支持很多种常见Nor Flash的烧写</listitem>
+                                </itemizedlist>
+                            </listitem>
+                        </itemizedlist>
+                    </listitem>
+                    
+                    <listitem>如何操作
+                        <para>个人接触比较多的是，Jlink硬件 + 软件工具J-Flash ARM。其如何操作，参见：<xref linkend="ref.jlink_burn_flash" /></para>
+                    </listitem>
+                </orderedlist>
+            </sect4>
+            
+            <sect4 xml:id="burn_to_nand_flash"><title>Nand Flash</title>
+                <para>由于Nand Flash没有一个统一的规范，和本身操作起来就比较复杂，所以，虽然存在一些工具，可以支持直接烧写Nand Flash，但是相对比较少，使用起来所要求的限制条件也比较多。</para>
+                <para>此外，是有专门的Nand Flash的烧录器的，一般叫做Nand Flash Programmer，直接将对应的文件，烧写到对应的Nand Flash上的，不过个人没怎么用过，不多解释。</para>
+            </sect4>
+        </sect3>
+        
+        <sect3 xml:id="two_step_first_mem_then_uboot_to_storage"><title>两步到位：先写到内存，再用uboot的命令写到存储介质上</title>
+            <sect4 xml:id="data_to_mem"><title>如何把文件或数据下载到内存中</title>
+                <para>下表简单总结了，如何将数据通过硬件接口+相关软件，下载到Uboot中的方式：</para>
+                <table id="tbl.down_file_to_uboot"><title>将文件下载到Uboot中的方式</title>
+                    <tgroup cols="4">
+                        <colspec colnum="1" colname="col1" colwidth="1*" />
+                        <colspec colnum="2" colname="col2" colwidth="1*" />
+                        <colspec colnum="3" colname="col3" colwidth="1*" />
+                        <colspec colnum="4" colname="col4" colwidth="2*" />
+
+                        <thead>
+                            <row><entry>开发板上的硬件接口</entry><entry>软件协议</entry><entry>相关软件或Uboot中的命令</entry><entry>说明</entry></row>
+                        </thead>
+                        <tbody>
+                            <row><entry morerows="1" valign="middle" >USB</entry><entry>USB Host – USB Mass Storage</entry><entry><screen>Fatls usb 0
+fatload usb addr file</screen></entry><entry><literallayout>USB cable
+Board has USB Host</literallayout></entry></row>
+                            <row><entry colname="col2">USB Slave/Device</entry><entry>DNW</entry><entry><literallayout>USB cable
+Board has USB Slave</literallayout></entry></row>
+                            <row><entry>RS232</entry><entry>Kermit/Ymodem</entry><entry>loadb/loady</entry><entry>RS232 Cable</entry></row>
+                            <row><entry morerows="1" valign="middle" >NIC</entry><entry>Tftp</entry><entry>tftp file</entry><entry><literallayout>network interface card
+Server has tftp service</literallayout></entry></row>
+                            <row><entry colname="col2" >NFS</entry><entry>NFS</entry><entry><literallayout>network interface card
+Server has NFS service
+Network cable
+switch</literallayout></entry></row>
+                            <row><entry>SD/MMC</entry><entry>SD/MMC</entry><entry><screen>Fatls mmc 0
+Fatload mmc 0 addr file</screen></entry><entry></entry></row>
+                            <row><entry>JTAG</entry><entry>JTAG</entry><entry>IDE tool</entry><entry><literallayout>Hardware debug tool
+IDE support Load file into Memory</literallayout></entry></row>
+                        </tbody>
+                    </tgroup>
+                </table>
+                <para>下面，对每一种方式进行详细的阐述：</para>
+                
+                <sect5 xml:id="data_to_mem_via_usb"><title>USB</title>
+                    <para>关于USB Host和USB Device，上面已经名词解释过了，此处不再赘述。</para>
+                    <para>现在很多开发板上，都有USB的Host和USB的Device的接口。</para>
+                    <para>所以，对应着，可以实现，外接U盘到开发板上，或者将开发板作为U盘连到PC上</para>
+                    <para>然后操作U盘，把文件拷贝到U盘里，实现对应的把文件数据传输到开发板上这一功能。</para>
+                    
+                    <section xml:id="usb_vid_host_and_udisk"><title>USB Host = USB Mass Storage = U Disk</title>
+                        <orderedlist>
+                            <listitem>目标
+                                <para>把插在开发板上的U盘中的文件，拷贝Uboot的内存中</para>
+                            </listitem>
+                            
+                            <listitem>前提
+                                <itemizedlist>
+                                    <listitem>硬件
+                                        <itemizedlist>
+                                            <listitem>开发板上有USB Host芯片和接口
+                                                <para>以我这里的TQ2440的板子为例，用的CPU是三星的S3C2440，其中包含了一个OHCI的USB Host主控制器。</para>
+                                                <para>板子上也有USB Host接口。</para>
+                                            </listitem>
+                                            
+                                            <listitem>自己有U盘</listitem>
+                                        </itemizedlist>
+                                    </listitem>
+                                    
+                                    <listitem>软件
+                                        <itemizedlist>
+                                            <listitem>Uboot中已经实现了USB Host Controller的驱动
+                                                <para>如果Uboot中没有你的板子上的USB Host Controller的驱动的话，需要自己移植，甚至从头实现的话，这个工作量和难度，还是不小的。</para>
+                                                <para>以此处的S3C2440的驱动为例，此处已经把新的版本的Uboot中的相关代码，移植到了TQ2440的1.1.6的uboot中，实现了对应的S3C2440的OHCI的驱动。</para>
+                                                <para>相关过程和源码，参考：<xref linkend="ref.tq2440_uboot_sd_mmc_usb" /></para>
+                                            </listitem>
+                                            
+                                            <listitem>U盘的文件系统是FAT格式的
+                                                <para>如果你的U盘是NTFS等其他格式，那么要重新格式化为FAT16/FAT32格式。</para>
+                                                <para>当然，如果是其他的文件系统，比如ext2等，也是可以的，下面对应的命令就是<command>ext2ls</command>和<command>ext2load</command>了。</para>
+                                            </listitem>
+                                        </itemizedlist>
+                                    </listitem>
+                                </itemizedlist>
+                            </listitem>
+                            
+                            <listitem>如何操作
+                                <para>在Uboot中使用对应命令来操作U盘：</para>
+                                <orderedlist>
+                                    <listitem><emphasis>usb rescan</emphasis>
+                                        <para>去初始化usb host。关于usb 子系统更多的相关的命令，可以通过</para>
+                                        <screen>help usb</screen>
+                                        <para>看到更多的帮助信息。</para>
+                                    </listitem>
+                                    
+                                    <listitem><emphasis>fatls usb 0</emphasis>
+                                        <para>将你U盘的FAT文件系统中的文件列出来，以确保USB现在可以正常工作，和知道你当前U盘里面有哪些文件，此时应该可以看到你所要拷贝的文件，如果你是把文件放在根目录的话。(一般都是把u-boot.bin等文件，放到U盘根目录的)</para>
+                                    </listitem>
+                                    
+                                    <listitem><emphasis>fatload usb 0 mem_addr file_name</emphasis>
+                                        <para>去将U盘中的文件file_name载入到内存中mem_addr的位置。</para>
+                                    </listitem>
+                                </orderedlist>
+                            </listitem>
+                        </orderedlist>
+                    </section>
+                    
+                    <section xml:id="usb_via_slave_device"><title>USB Slave = USB Device</title>
+                        <orderedlist>
+                            <listitem>目标
+                                <para>将PC端的文件，通过USB线，传输到作为USB Device端的开发板上的Uboot的内存中</para>
+                            </listitem>
+                            
+                            <listitem>前提
+                                <itemizedlist>
+                                    <listitem>硬件
+                                        <itemizedlist>
+                                            <listitem>板子上有对应的USB Device功能的controller和对应的USB Device接口</listitem>
+                                        </itemizedlist>
+                                    </listitem>
+                                    
+                                    <listitem>软件
+                                        <itemizedlist>
+                                            <listitem>PC端已经安装了对应的USB相关驱动</listitem>
+                                            <listitem>PC端需要有对应的DNW软件</listitem>
+                                            <listitem>Uboot中实现了对应的命令
+                                                <para>以TQ2440为例，其中已经有了usb slave 相关功能和命令</para>
+                                            </listitem>
+                                        </itemizedlist>
+                                    </listitem>
+                                </itemizedlist>
+                            </listitem>
+                            
+                            <listitem>如何操作
+                                <para>具体的操作，相对比较麻烦，此处只列出主要步骤：</para>
+                                <orderedlist>
+                                    <listitem>去Uboot端执行对应的usb slave命令
+                                        <para>以等待PC主机端传输文件</para>
+                                    </listitem>
+                                    
+                                    <listitem>去PC端用DNW去传输文件
+                                        <para>USB Port -> Transmit -> 选择要传输的文件</para>
+                                        <para>然后对应的文件就可以传输到对应的Uboot中的内存中去了。</para>
+                                    </listitem>
+                                </orderedlist>
+                                <para>更多的细节，如何操作，请参看TQ2440的手册：<xref linkend="ref.tq2440_manual" /></para>
+                                <para>在此，免费为天嵌的TQ2440宣传一句，其资料和相关文档，做的是蛮不错的，东西很全，很详细，尤其适合初学者。</para>
+                            </listitem>
+                        </orderedlist>
+                    </section>
+                </sect5>
+                
+                <sect5 xml:id="data_to_mem_via_rs232"><title>RS232</title>
+                    <para>RS232的连接方式，是最常见的。</para>
+                    <para>即，开发板上有串口接口，然后接了根RS232线，连到PC端，然后PC端用一个串口终端程序，连接开发板，比如常见的Windows XP系统自带的超级终端Hyper Terminal，功能强大的SecureCRT，以及Putty等等，都是不错的串口工具。</para>
+                    <para>其中关于如何在Win7下面使用超级终端（Hyper Terminal），不了解的可以去参考：<xref linkend="ref.win7_hpyer_terminal" /></para>
+                    
+                    <section xml:id="rs232_via_kermit"><title>Kermit</title>
+                        <para>Kermit是一种协议，广泛使用的协议，用来传输文件和数据的协议，很早之前就有了此协议，所以现在很多地方都已实现和支持此协议。</para>
+                        <para>关于Kermit和Ymodem的详情，去看我转的帖子：<xref linkend="ref.kermit_protocol" /></para>
+                        <para>而关于Kermit，XModem，Ymodem和Zmodem之间的区别和联系，可以去看：<xref linkend="ref.kermit_vs_modem" /></para>
+                        
+                        <orderedlist>
+                            <listitem>目标
+                                <para>通过Kermit协议，将文件通过RS232接口传送到Uboot的内存中</para>
+                            </listitem>
+                            
+                            <listitem>前提
+                                <itemizedlist>
+                                    <listitem>硬件
+                                        <itemizedlist>
+                                            <listitem>开发板中有RS232接口，并且已连接到PC端</listitem>
+                                        </itemizedlist>
+                                    </listitem>
+                                    
+                                    <listitem>软件
+                                        <itemizedlist>
+                                            <listitem>Uboot中已经实现kermit协议的loadb命令
+                                                <para>这个，一般的uboot中都已实现。</para>
+                                                <para>此处说一个诡异的事情，之前遇到过，即使help中没有看到loadb的命令，但是实际也是支持loadb的，估计是uboot开发者，把此命令注释掉了，但是实际kermit协议用途太广泛，而uboot本身程序中早已经实现了，所以loadb还是已经在uboot中的了。</para>
+                                            </listitem>
+                                        </itemizedlist>
+                                    </listitem>
+                                </itemizedlist>
+                            </listitem>
+                            
+                            <listitem>如何操作
+                                <orderedlist>
+                                    <listitem>在uboot中，输入<emphasis>loadb</emphasis></listitem>
+                                    
+                                    <listitem>在PC端使用串口程序去传送文件
+                                        <para>以windows XP下的串口工具超级终端为例：</para>
+                                        <para>选择Transfer &rArr; Send File &rArr; Protocol选择Kermit，FileName选择你所要传送的文件->点击确定即可。然后就是慢慢传送文件了。</para>
+                                    </listitem>
+                                </orderedlist>
+
+                                <para>至于文件数据传输后，放在uboot的内存中的哪个位置，是由你uboot中的环境变量loadaddr决定，我这里的是loadaddr=0x800000。</para>
+                                <para>当然，你也可以在执行loady的时候，后面加上你要的地址，比如：</para>
+                                <para><emphasis>loadb 0x1000000</emphasis></para>
+                                <para>Kermit协议，数据传输速度比较慢，我这里传输了个8MB的文件，大概要40分钟左右的。</para>
+                            </listitem>
+                        </orderedlist>
+                    </section>
+                    
+                    <section xml:id="rs232_via_ymodem"><title>Ymodem</title>
+                        <para>关于Ymodem协议，是从之前的Xmodem协议演化出来的，之后还有Zmodem。</para>
+                        <para>简单的说就是，一个数据包大小为1KB的数据传输协议。</para>
+                        <para>更多的解释，参见上面已经提到的<xref linkend="ref.kermit_vs_modem" /></para>
+                         
+                        <orderedlist>
+                            <listitem>目标
+                                <para>通过Ymodem协议，将文件通过RS232接口传送到Uboot的内存中</para>
+                            </listitem>
+                            
+                            <listitem>前提
+                                <itemizedlist>
+                                    <listitem>硬件
+                                        <itemizedlist>
+                                            <listitem>开发板中有RS232接口，并且已连接到PC端</listitem>
+                                        </itemizedlist>
+                                    </listitem>
+                                    
+                                    <listitem>软件
+                                        <itemizedlist>
+                                            <listitem>Uboot中已经实现Ymodem协议的loady命令</listitem>
+                                        </itemizedlist>
+                                    </listitem>
+                                </itemizedlist>
+                            </listitem>
+                            
+                            <listitem>如何操作
+                                <orderedlist>
+                                    <listitem>在uboot中，输入<emphasis>loady</emphasis></listitem>
+                                    <listitem>在PC端使用串口程序去传送文件</listitem>
+                                </orderedlist>
+                                <para>以windows XP下的串口工具超级终端为例：</para>
+                                <para>选择Transfer &rArr; Send File &rArr; Protocol选择Ymodem，FileName选择你所要传送的文件->点击确定即可。然后就是慢慢传送文件了。</para>
+                            </listitem>
+                            
+                            <listitem>示例
+                                <screen>
+Bootldr&gt; <emphasis>loady</emphasis>
+## Ready for binary (ymodem) download to 0x00800000 at 115200 bps...
+CCCxyzModem - CRC mode, 2(SOH)/8192(STX)/0(CAN) packets, 5 retries
+## Total Size      = 0x00800000 = 8388608 Bytes
+                                </screen>
+                            </listitem>
+                        </orderedlist>
+                    </section>
+                </sect5>
+                
+                <sect5 xml:id="data_to_mem_via_nic"><title>NIC/network</title>
+                    <para>多数开发板上，也都带有网卡接口，然后通过网线，连接到一个路由或者交换机上，另外一个PC也连接到此路由或交换机上，然后通过网线，将PC上的文件数据，传输到板子上。</para>
+                    
+                    <section xml:id="nic_via_tftp"><title>tftp</title>
+                        <orderedlist>
+                            <listitem>目标
+                                <para>将文件通过tftp方式，从PC端，下载到Uboot的内存中</para>
+                            </listitem>
+                            
+                            <listitem>前提
+                                <itemizedlist>
+                                    <listitem>硬件
+                                        <itemizedlist>
+                                            <listitem>硬件板子上有网卡</listitem>
+                                            <listitem>板子通过网线连到路由或交换机上，PC也连到该路由或交换机上，共处同一个网段</listitem>
+                                        </itemizedlist>
+                                    </listitem>
+                                    
+                                    <listitem>软件
+                                        <itemizedlist>
+                                            <listitem>PC端设置好tftp服务
+                                                <para>关于PC端安装了tftp服务（TFTP service），详情可以参考：<xref linkend="ref.ubuntu_install_tftp" /></para>
+                                            </listitem>
+                                            <listitem>安装好tftp服务后，把对应的u-boot.bin等文件，放到tftp的根目录下</listitem>
+                                            <listitem>Uboot中，首先肯定是已经实现了网卡驱动，以及添加了对应的tftp命令
+                                                <para>此两个前提，一般开发板都已经具有此条件</para>
+                                            </listitem>
+                                        </itemizedlist>
+                                    </listitem>
+                                </itemizedlist>
+                            </listitem>
+                            
+                            <listitem>如何操作
+                                <para>在Uboot中，执行命令</para>
+                                <emphasis>tftp mem_addr file_name</emphasis>
+                                <para>就可以将文件file_name传送到Uboot的内存地址mem_addr中了。</para>
+                            </listitem>
+                            
+                            <listitem>示例
+                                <screen>
+EmbedSky&gt; <emphasis>tftp 0x30010000 u-boot.bin</emphasis>
+dm9000 i/o: 0x20000300, id: 0x90000a46 
+MAC: 0a:1b:2c:3d:4e:5f
+TFTP from server 192.168.1.101; our IP address is 192.168.1.120
+Filename 'u-boot.bin'.
+Load address: 0x30010000
+Loading: T ###############
+done
+Bytes transferred = 207396 (32a24 hex)
+                                </screen>
+                            </listitem>                            
+                        </orderedlist>
+                    </section>
+                    
+                    <section xml:id="nic_via_nfs"><title>NFS</title>
+                        <orderedlist>
+                            <listitem>目标
+                                <para>将文件通过NFS命令，从PC端，通过网络，传送到Uboot的内存中去</para>
+                            </listitem>
+                            
+                            <listitem>前提
+                                <itemizedlist>
+                                    <listitem>硬件
+                                        <itemizedlist>
+                                            <listitem>硬件板子上有网卡</listitem>
+                                            <listitem>板子通过网线连到路由或交换机上，PC也连到该路由或交换机上，共处同一个网段</listitem>
+                                        </itemizedlist>
+                                    </listitem>
+                                    
+                                    <listitem>软件
+                                        <itemizedlist>
+                                            <listitem>PC端设置好NFS服务</listitem>
+                                            <listitem>Uboot中实现了网卡驱动和nfs命令</listitem>
+                                            <listitem>Uboot中设置好了ip地址，ip掩码mask，网关gateway</listitem>
+                                        </itemizedlist>
+                                    </listitem>
+                                </itemizedlist>
+                            </listitem>
+                            
+                            <listitem>如何操作
+                                <para>Uboot中执行：</para>
+                                <emphasis>nfs mem_addr IP:path/file</emphasis>
+                            </listitem>
+                            
+                            <listitem>示例
+                                <screen>
+<emphasis>nfs 0x30008000 192.168.0.3:/home/nfs/uImage</emphasis>
+                                </screen>
+                            </listitem>  
+                        </orderedlist>
+                    </section>
+                </sect5>
+                
+                <sect5 xml:id="data_to_mem_sdmmc"><title>SD/MMC</title>
+                    <section xml:if="sdmmc_via_tftp"><title>tftp</title>
+                        <orderedlist>
+                            <listitem>目标
+                                <para>将文件从SD/MMC卡中，拷贝到Uboot的内存中</para>
+                            </listitem>
+                            
+                            <listitem>前提
+                                <itemizedlist>
+                                    <listitem>硬件
+                                        <itemizedlist>
+                                            <listitem>开发板有SD/MMC的controller，有对应的SD/MMC插槽</listitem>
+                                            <listitem>自己有SD或MMC卡</listitem>
+                                        </itemizedlist>
+                                    </listitem>
+                                    
+                                    <listitem>软件
+                                        <itemizedlist>
+                                            <listitem>Uboot中实现了对应的SD/MMC驱动及对应的命令
+                                                <para>关于uboot中，把新版本的mmc驱动，移植到旧的上，可以参考：<xref linkend="ref.uboot_porting_mmc" /></para>
+                                            </listitem>
+                                            <listitem>SD/MMC卡是FAT文件系统
+                                                <para>当然，如果是其他的文件系统，比如ext2等，也是可以的，下面对应的命令就是<command>ext2ls</command>和<command>ext2load</command>了。</para>
+                                            </listitem>
+                                        </itemizedlist>
+                                    </listitem>
+                                </itemizedlist>
+                            </listitem>
+                            
+                            <listitem>如何操作
+                                <orderedlist>
+                                    <listitem><emphasis>mmcinit</emphasis>或<emphasis>mmc rescan</emphasis>
+                                        <para>即初始化mmc，旧版本的uboot的是mmcinit，新版本的uboot是mmc rescan</para>
+                                    </listitem>
+                                    <listitem><emphasis>fatls mmc 0</emphasis>
+                                        <para>将mmc卡中的文件列出来，确保mmc卡工作正常和知道里面有哪些文件</para>
+                                    </listitem>
+                                    <listitem><emphasis>fatload mmc 0 mem_addr file_name</emphasis>
+                                        <para>将mmc卡中的file_name文件拷贝到内存mem_addr处。</para>
+                                    </listitem>
+                                </orderedlist>
+                            </listitem>
+                            
+                            <listitem>示例
+                                <screen>
+EmbedSky&gt; <emphasis>mmcinit</emphasis>
+mmc: Probing for SDHC ...
+mmc: SD 2.0 or later card found
+trying to detect SD Card...
+Manufacturer: 0x02, OEM "TM"
+Product name: "SA04G", revision 0.5
+Serial number: 2621440179
+Manufacturing date: 7/2010
+CRC: 0x73, b0 = 1
+READ_BL_LEN=15, C_SIZE_MULT=0, C_SIZE=365
+size = 0
+SD Card detected RCA: 0x1234 type: SDHC
+EmbedSky&gt; md 30000000
+30000000: 00000000 00000000 00000000 00000000 ................
+30000010: 00000000 00000000 00000000 00000000 ................
+。。。
+300000f0: 00000000 00000000 00000000 00000000 ................
+EmbedSky&gt; <emphasis>fatls mmc 0</emphasis>
+512 nikon001.dsc 
+misc/
+dcim/
+194 error.html 
+
+2 file(s), 2 dir(s)
+
+EmbedSky&gt; help fatload 
+fatload &lt;interface&gt; &lt;dev[:part]&gt; &lt;addr&gt; &lt;filename&gt; [bytes]
+- load binary file 'filename' from 'dev' on 'interface'
+to address 'addr' from dos filesystem
+
+EmbedSky&gt; <emphasis>fatload mmc 0 30000000 error.html</emphasis>
+reading error.html
+
+194 bytes read
+EmbedSky&gt; md 30000000
+30000000: 4d54483c 423c3e4c 3e59444f 6e6f7257 &lt;HTML&gt;&lt;BODY&gt;Wron
+30000010: 50492067 7263733c 3e747069 646e6977 g IP&lt;script&gt;wind
+。。。
+300000f0: 00000000 00000000 00000000 00000000 ................
+EmbedSky&gt;
+                                </screen>
+                                <para>上述md（memory display）命令，只是为了显示内存中的内容，用以表示，拷贝文件前后内存中数据的变化。</para>
+                            </listitem>                            
+                        </orderedlist>
+                    </section>
+                </sect5>
+                
+                <sect5 xml:id="data_to_mem_via_jtag"><title>JTAG == debug tool</title>
+                    <section xml:id="jtag_via_tftp"><title>tftp</title>
+                        <orderedlist>
+                            <listitem>目标
+                                <para>在开发板运行程序的情况下，比如Uboot中，通过debug工具，将文件下载到Uboot的内存中</para>
+                            </listitem>
+                            
+                            <listitem>前提
+                                <itemizedlist>
+                                    <listitem>硬件
+                                        <itemizedlist>
+                                            <listitem>开发板上有JTAG等debug接口，连接上对应的Jlink等硬件</listitem>
+                                        </itemizedlist>
+                                    </listitem>
+                                    
+                                    <listitem>软件
+                                        <itemizedlist>
+                                            <listitem>对应的debug 工具支持载入文件到内存的功能
+                                                <para>一般debug工具，都是IDE集成开发环境，对应的IDE里面会有对应的功能。</para>
+                                                <para>比如ARM的RVDS，里面就有对应的load file到memory的功能。</para>
+                                            </listitem>
+                                        </itemizedlist>
+                                    </listitem>
+                                </itemizedlist>
+                            </listitem>
+                            
+                            <listitem>如何操作
+                                <para>在IDE工具中，找到对应的功能选项，然后把文件load载入到开发板的内存中，即可。</para>
+                            </listitem>
+                        </orderedlist>
+                    </section>
+                </sect5>
+            </sect4>
+            
+            <sect4 xml:id="mem_to_storage"><title>如何把内存中的数据，写入到对应存储设备上</title>
+                <para>前面的操作，是把数据从外部传输到Uboot的内存中，接下来，就要把对应的数据，写入到对应的存储介质中去。</para>
+                <para>常见的存储介质以及Uboot中相关的命令，分类如下：</para>
+                <table id="tbl.mem_data_to_dev"><title>如何把Uboot的内存中数据写入到存储设备上</title>
+                    <tgroup cols="3">
+                        <colspec colnum="1" colname="col1" colwidth="1*" />
+                        <colspec colnum="2" colname="col2" colwidth="1*" />
+                        <colspec colnum="3" colname="col3" colwidth="2*" />
+                        
+                        <thead>
+                            <row><entry>存储介质</entry><entry>Uboot中相关命令</entry><entry>说明</entry></row>
+                        </thead>
+                        
+                        <tbody>
+                            <row><entry>Nand Flash</entry><entry><literallayout>nand erase
+nand write</literallayout></entry><entry>先擦除才能再写入数据</entry></row>
+                            <row><entry>Nor Flash</entry><entry><literallayout>erase
+cp.b</literallayout></entry><entry>先擦除才能再写入数据</entry></row>
+                            <row><entry>USB</entry><entry>usb write</entry><entry></entry></row>
+                            <row><entry>SD/MMC</entry><entry>mmc write</entry><entry></entry></row>
+                        </tbody>
+                    </tgroup>
+                </table>
+                <para>下面分别介绍，在Uboot中，对于每种存储设备，如何用相关的命令，把数据写入到对应存储设备中。</para>
+                
+                <sect5 xml:id="mem_to_stor_via_nand"><title>Nand Flash</title>
+                    <orderedlist>
+                        <listitem>目标
+                            <para>把Uboot中内存中数据，写入到Nand Flash中去</para>
+                        </listitem>
+                        
+                        <listitem>前提
+                            <itemizedlist>
+                                <listitem>软件
+                                    <itemizedlist>
+                                        <listitem>Uboot中，已经实现了<emphasis>nand erase</emphasis>和<emphasis>nand write</emphasis>命令了</listitem>
+                                    </itemizedlist>
+                                </listitem>
+                            </itemizedlist>
+                        </listitem>
+                        
+                        <listitem>如何操作
+                            <itemizedlist>
+                                <listitem><emphasis>nand erase</emphasis>
+                                    <para>需要先用nand的erase命令，去擦出对应的区域</para>
+                                </listitem>
+                                <listitem><emphasis>nand write</emphasis>
+                                    <para>然后再用nand write，把内存中的数据，写入到nand 中。</para>
+                                </listitem>
+                            </itemizedlist>
+                        </listitem>
+                    </orderedlist>
+                </sect5>
+                
+                <sect5 xml:id="mem_to_stor_via_nor"><title>Nor Flash</title>
+                    <para>关于Nor Flash，需要额外说明一些事情。</para>
+                    <para>本身Flash这个名词，在存储领域方面，包括了Nand Flash和Nor Flash。</para>
+                    <para>而由于Nor Flash出现最早，应用很广泛，所以Uboot中，对于单独说Flash这个词，是指的是Nor Flash。</para>
+                    <para>所以，会有对应的命令：</para>
+                    <para><emphasis>flinfo</emphasis> = Flash Info = Nor Flash Info</para>
+                    <para>而又由于Nor Flash的很多操作，很像SDRAM等设备，可以直接读，（写操作需要特定的命令），但是可以把Nor Flash的操作，兼容统一到cp拷贝这个命令中去。</para>
+                    <para>所以，很多时候，你会发现，好像没有单独的Nor Flash的读写的命令，其实是包含在了cp这个命令中了。</para>
+                    <para>另外，对于cp命令本身，其有三种方式：</para>
+                    <itemizedlist>
+                        <listitem><emphasis>cp.b</emphasis>单位为b=byte=字节的方式，去拷贝数据</listitem>
+                        <listitem><emphasis>cp.w</emphasis>单位为w=word=字的方式，去拷贝数据</listitem>
+                        <listitem><emphasis>cp.l</emphasis>单位为l=long=长整型的方式，去拷贝数据</listitem>
+                    </itemizedlist>
+                    <para>不过，对于eeprom，也有单独的一套eeprom的命令的，比如eeprom write，用于将数据写入到eeprom中去。</para>
+                    
+                    <orderedlist>
+                        <listitem>目标
+                            <para>把Uboot中内存中数据，写入到Nor Flash中去</para>
+                        </listitem>
+                        
+                        <listitem>前提
+                            <itemizedlist>
+                                <listitem>软件
+                                    <itemizedlist>
+                                        <listitem>Uboot中，已经实现了Nor flash 相关的命令了，包括erase和cp命令支持了Nor Flash了</listitem>
+                                    </itemizedlist>
+                                </listitem>
+                            </itemizedlist>
+                        </listitem>
+                        
+                        <listitem>如何操作
+                            <para>在Uboot中，执行下列命令：</para>
+                            <itemizedlist>
+                                <listitem><emphasis>protect off</emphasis>
+                                    <para>只有在你当前需要重新写入新数据的Nor Flash的Block是已经被写保护的情况下，才需要此步骤去解除锁定。</para>
+                                    <para>一般情况下，都不需要此步骤的。</para>
+                                </listitem>
+                                <listitem><emphasis>erase</emphasis>
+                                    <para>去擦出Nor Flash中的数据</para>
+                                </listitem>
+                                <listitem><emphasis>cp</emphasis>或<emphasis>eeprom write</emphasis>
+                                    <para>将内存中的数据，写入到Nor Flash中。</para>
+                                </listitem>
+                            </itemizedlist>
+                        </listitem>
+                    </orderedlist>
+                </sect5>
+                
+                <sect5 xml:id="mem_to_stor_via_usb"><title>USB</title>
+                    <orderedlist>
+                        <listitem>目标
+                            <para>将Uboot中的内存中的数据，写入到USB设备中</para>
+                        </listitem>
+                        
+                        <listitem>前提
+                            <itemizedlist>
+                                <listitem>软件
+                                    <itemizedlist>
+                                        <listitem>Uboot中已经实现了对应的usb write命令</listitem>
+                                    </itemizedlist>
+                                </listitem>
+                            </itemizedlist>
+                        </listitem>
+                        
+                        <listitem>如何操作
+                            <para>在Uboot中，执行下列命令：</para>
+                            <itemizedlist>
+                                <listitem><emphasis>usb write</emphasis>
+                                    <para>将对应的内存中的数据，写入到Usb设备中。</para>
+                                </listitem>
+                            </itemizedlist>
+                        </listitem>
+                    </orderedlist>
+                </sect5>
+                
+                <sect5 xml:id="mem_to_stor_via_sdmmc"><title>SD/MMC</title>
+                    <orderedlist>
+                        <listitem>目标
+                            <para>将Uboot中的内存中的数据，写入到SD/MMC设备中。</para>
+                        </listitem>
+                        
+                        <listitem>前提
+                            <itemizedlist>
+                                <listitem>软件
+                                    <itemizedlist>
+                                        <listitem>Uboot中已经实现了对应的mmc write命令</listitem>
+                                    </itemizedlist>
+                                </listitem>
+                            </itemizedlist>
+                        </listitem>
+                        
+                        <listitem>如何操作
+                            <para>在Uboot中，执行下列命令：</para>
+                            <itemizedlist>
+                                <listitem><emphasis>mmc write</emphasis>
+                                    <para>将对应的内存中的数据，写入到SD/MMC设备中。</para>
+                                </listitem>
+                            </itemizedlist>
+                        </listitem>
+                    </orderedlist>
+                </sect5>
+                
+            </sect4>
+
+        </sect3>
+        
+    </sect2>
+</sect1>
+
+<sect1 xml:id="after_release_dynamic_upgrade"><title>产品发布后：通过操作设备节点实现动态升级固件</title>
+    <para>除了开发过程中，去烧写固件之外，在发布产品后，很多厂商，希望在系统运行的情况下，实时地，可以去更新对应的固件，比如kernel的uImage或者rootfs等，此时，多数系统，往往是不太容易这样去升级的，不过还是有可能实现这样的在线升级系统的。</para>
+    <para>基本的思路是，在运行的Linux中，通过操作对应的设备节点，比如：</para>
+    <orderedlist>
+        <listitem>对于Nand Flash或者Nor Flash，通过MTD的工具，即mtd-util中的nandwrite等，操作/dev/mtdN将新的固件写入进去
+            <para>具体实现方法，参见另外一篇文章：<xref linkend="ref.runtime_upgrade_linux" /></para>
+        </listitem>
+        <listitem>对于SD/MMC，通过操作/dev/mmc设备，将新的固件写入进去
+            <para>以此实现在线升级固件。</para>
+            <para>相关实现方式，参考：<xref linkend="ref.sd_mmc_multi_part" /></para>
+        </listitem>
+    </orderedlist>
+</sect1>
+
+</chapter>

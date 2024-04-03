@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding="utf-8"?>
+
+<!DOCTYPE chapter
+[
+
+<!ENTITY % crl_ent PUBLIC "crl.ent" "http://www.crifan.com/files/res/docbook/entity/crl.ent">
+%crl_ent;
+
+]>
+<chapter    xml:id="ch01_background"
+        xmlns="http://docbook.org/ns/docbook"
+        xmlns:xl="http://www.w3.org/1999/xlink"
+        xmlns:xi="http://www.w3.org/2001/XInclude"
+        xmlns:ns5="http://www.w3.org/1998/Math/MathML"
+        xmlns:ns4="http://www.w3.org/1999/xhtml"
+        xmlns:ns3="http://www.w3.org/2000/svg"
+        xmlns:ns="http://docbook.org/ns/docbook">
+
+<title>背景介绍</title>
+<abstract></abstract>
+<para>目前在嵌入式开发中，经常要实现将对应的固件，烧写到开发板中，然后开发板才能运行我们的程序。</para>
+<para>嵌入式开发，很多用的是Linux系统，也有用WinCE和其他系统，但此文只介绍Linux系统下面的情况。</para>
+<para>Linux系统中，多数为bootloader+ kernel + rootfs的模式。</para>
+<para>其中，所用的bootloader，多为uboot。负责初始化硬件和设置好软件环境，</para>
+<para>然后加载kernel，运行kernel，kernel运行后，再去加载rootfs，之后就是你所看到的运行的Linux了。</para>
+<para>其中，在开发过程中，常常会遇到，需要把某个文件，比如U-boot.bin，uImage，rootfs等文件</para>
+<para>从PC上，下载到Uboot的SDRAM，即内存中，</para>
+<para>然后再用对应命令或工具，将数据写入到某存储介质中。</para>
+<para>其中，有时候也需要在发布产品之后，在系统运行的情况下，动态升级整个系统的固件的。</para>
+<para>此文就是主要探讨，此嵌入式Linux中，开发过程中和产品发布后，相关的固件烧写方式。</para>
+
+</chapter>

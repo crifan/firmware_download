@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding="utf-8"?>
+
+<bibliography xmlns="http://docbook.org/ns/docbook"
+    xml:id="reference"
+    xmlns:xi="http://www.w3.org/2001/XInclude">
+
+<bibliomixed xml:id="ref.tq2440_manual">
+  <bibliosource><ulink url="http://soft.embedsky.net/files/TQ2440开发板使用手册V2.5_20100611.rar">TQ2440开发板使用手册</ulink></bibliosource>
+  <author>EmbedSky</author>
+</bibliomixed>
+
+<bibliomixed xml:id="ref.kermit_protocol">
+  <bibliosource><ulink url="http://www.crifan.com/switch_xmodem_and_kermit_protocol/">【转】xmodem与kermit协议</ulink></bibliosource>
+  <author>from network</author>
+</bibliomixed>
+
+<bibliomixed xml:id="ref.uboot_nfs_mount_linux">
+  <bibliosource><ulink url="http://f.wiseleung.com/?p=154">uboot 用 nfs 挂载 linux kernel 和 fs</ulink></bibliosource>
+  <author>flying</author>
+</bibliomixed>
+
+<bibliomixed xml:id="ref.jlink_burn_flash">
+  <bibliosource><ulink url="http://www.crifan.com/use_the_cracked_version_of_jlink_to_achieve_the_development_of_the_external_board_of_nor_flash_programming__jlink_v408k_download/">使用破解版的JLink实现对开发板上的外部Nor Flash的烧写 + JLink V4.08k 下载地址</ulink></bibliosource>
+  <author>Crifan Li</author>
+</bibliomixed>
+
+<bibliomixed xml:id="ref.tq2440_uboot_sd_mmc_usb">
+  <bibliosource><ulink url="http://www.crifan.com/recorded_in_the_uboot_tq2440_add_sd__mmc_usb_mass_storage_support__added_support__solution_fatls_garbled/">【记录】在TQ2440的uboot中添加SD/MMC支持 + 添加USB Mass Storage支持 + 解决fatls乱码问题</ulink></bibliosource>
+  <author>Crifan Li</author>
+</bibliomixed>
+
+<bibliomixed xml:id="ref.kermit_vs_modem">
+  <bibliosource><ulink url="http://www.crifan.com/order_kermit_xmodem_xmodem-1k_ymodem_ymodem-g_ymodem-1k_zmodem/">【整理】Kermit Xmodem Xmodem-1K Ymodem Ymodem-G Ymodem-1K Zmodem</ulink></bibliosource>
+  <author>Crifan Li</author>
+</bibliomixed>
+
+<bibliomixed xml:id="ref.ubuntu_install_tftp">
+  <bibliosource><ulink url="http://www.crifan.com/_has_been_successfully_installed_under_ubuntu_1010_tftp_tftp-hpa_version_of_the_steps/">【已成功】Ubuntu 10.10下安装TFTP的步骤 tftp-hpa版本</ulink></bibliosource>
+  <author>Crifan Li</author>
+</bibliomixed>
+
+<bibliomixed xml:id="ref.uboot_porting_mmc">
+  <bibliosource><ulink url="http://www.crifan.com/records_in_the_uboot_201106_mmc_drive_the_process_of_porting_to_uboot_116/">【记录】将Uboot 2011.06中mmc驱动移植到uboot 1.1.6的过程</ulink></bibliosource>
+  <author>Crifan Li</author>
+</bibliomixed>
+
+<bibliomixed xml:id="ref.runtime_upgrade_linux">
+  <bibliosource><ulink url="http://www.crifan.com/files/doc/docbook/runtime_upgrade_linux/release/html/runtime_upgrade_linux.html">在Linux运行期间升级Linux系统（Uboot+kernel+Rootfs）</ulink></bibliosource>
+  <author>Crifan Li</author>
+</bibliomixed>
+
+<bibliomixed xml:id="ref.sd_mmc_multi_part">
+  <bibliosource><ulink url="http://www.crifan.com/records_linux_driver_experience_how_to_sd__mmc_card_with_multiple_partitions_how_to_add_multi_partition_for_sd__mmc_card/">【经验记录】Linux驱动中如何给SD/MMC卡加多个分区 How to add multi partition for SD/MMC card</ulink></bibliosource>
+  <author>Crifan Li</author>
+</bibliomixed>
+
+<bibliomixed xml:id="ref.win7_hpyer_terminal">
+  <bibliosource><ulink url="http://www.crifan.com/order_how_to_install_in_win7_using_hyperterminal_hyper_terminal/">【整理】如何在Win7中安装使用超级终端Hyper Terminal</ulink></bibliosource>
+  <author>Crifan Li</author>
+</bibliomixed>
+
+</bibliography>

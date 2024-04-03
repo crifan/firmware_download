@@ -1,0 +1,70 @@
+<?xml version='1.0' encoding="utf-8"?>
+
+<!DOCTYPE book
+[
+
+<!ENTITY cur_book_name      "firmware_download" >
+<!ENTITY publish_date       "2013-12-15" >
+<!ENTITY release_version    "1.2" >
+
+<!ENTITY copyrith_year "2013" >
+<!ENTITY entity_common_multi_format     SYSTEM  "../../entity_common_multi_format.xml">
+<!ENTITY entity_common_publish_info     SYSTEM  "../../entity_common_publish_info.xml">
+]>
+
+<book version="5.0"
+    xmlns="http://docbook.org/ns/docbook"
+    xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:xl="http://www.w3.org/1999/xlink"
+    xml:lang="zh_CN"
+    >
+
+<info>
+    <title>【详解】嵌入式开发中固件的烧录方式</title>
+    <subtitle></subtitle>
+    <keywordset>
+        <keyword>嵌入式</keyword>
+        <keyword>Linux</keyword>
+        <keyword>固件</keyword>
+        <keyword>升级</keyword>
+        <keyword>方式</keyword>
+    </keywordset>
+
+    <abstract>
+        <para>本文主要介绍了嵌入式开发过程中，将固件从PC端下载到开发板中的各种方式，主要包括NFS挂载，Nand Flash和Nor Flash，USB，RS232，网卡NIC等方式。</para>
+        &entity_common_multi_format;
+    </abstract>
+
+    <revhistory>
+        <revision>
+            <revnumber>&release_version;</revnumber>
+            <date>&publish_date;</date>
+            <revremark>
+                <orderedlist>
+                    <listitem>通过Docbook发布</listitem>
+                    <listitem>添加了xml:id，添加了一些细节提示</listitem>
+                </orderedlist>
+            </revremark>
+            <authorinitials>crl</authorinitials>
+        </revision>
+        <revision>
+            <revnumber>1.0</revnumber>
+            <date>2011-08-25</date>
+            <revremark>
+                <orderedlist>
+                    <listitem>解释了嵌入式开发中的固件下载方式</listitem>
+                </orderedlist>
+            </revremark>
+            <authorinitials>crl</authorinitials>
+        </revision>
+    </revhistory>
+
+    &entity_common_publish_info;
+</info>
+
+<xi:include href="ch01_background.xml"/>
+<xi:include href="ch02_some_jargon.xml"/>
+<xi:include href="ch03_download_method.xml"/>
+<xi:include href="reference.xml"/>
+
+</book>

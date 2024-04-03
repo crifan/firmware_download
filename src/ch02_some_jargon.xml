@@ -1,0 +1,63 @@
+<?xml version='1.0' encoding="utf-8"?>
+
+<!DOCTYPE chapter
+[
+
+<!ENTITY % crl_ent PUBLIC "crl.ent" "http://www.crifan.com/files/res/docbook/entity/crl.ent">
+%crl_ent;
+
+]>
+<chapter    xml:id="ch02_some_jargon"
+        xmlns="http://docbook.org/ns/docbook"
+        xmlns:xl="http://www.w3.org/1999/xlink"
+        xmlns:xi="http://www.w3.org/2001/XInclude"
+        xmlns:ns5="http://www.w3.org/1998/Math/MathML"
+        xmlns:ns4="http://www.w3.org/1999/xhtml"
+        xmlns:ns3="http://www.w3.org/2000/svg"
+        xmlns:ns="http://docbook.org/ns/docbook">
+
+<title>名词解释</title>
+<abstract></abstract>
+
+<sect1 xml:id="firmware"><title>固件</title>
+    <para>固件，firmware</para>
+    <para>所谓固件，就是文件，固化在存储介质上的文件，而文件，其实就是数据。</para>
+    <para>嵌入式开发中，尤其是Linux开发，常见的方式是，从板子（个人用的是arm的板子）上启动，会允许Uboot，然后Uboot去加载kernel内核，个人常用的kernel是uImage，然后Linux运行后，去加载根文件系统rootfs，个人常用到的yaffs2文件系统。</para>
+    <para>前后系统运行所需要的文件，总的来说，就是这三个：</para>
+    <itemizedlist>
+        <listitem>Uboot，比如u-boot.bin</listitem>
+        <listitem>Kernel，比如uImage</listitem>
+        <listitem>Rootfs，比如yaffs2.rootfs.arm</listitem>
+    </itemizedlist>
+    <para>而大家一直说的固件，在系统是Linux系统的情况下，常常就是指的是这些文件。</para>
+</sect1>
+
+<sect1 xml:id="burn"><title>烧写</title>
+    <para>所谓烧写，就是写数据，把文件（固件/数据）写到存储介质（Nand Flash, Nor Flash等）上。</para>
+    <para>而对于烧写这个词，说法很多，常见的有：</para>
+    <para>烧写=烧录=flash=编程=program=programming</para>
+    <para>下面另外提到的，更新固件，其实也指的是将新的固件烧写进去，即所谓更新固件，更新系统。</para>
+</sect1>
+
+<sect1 xml:id="storage"><title>存储介质</title>
+    <para>存储介质，此处主要是指，嵌入式中存放firmware的地方，多数是Nor Flash加上Nand Flash的组合。其他的，也有单独是Nor Flash，单独是Nand Flash，单独是SD/MMC卡等方式。</para>
+</sect1>
+
+<sect1 xml:id="usb_host_and_device"><title>USB Host和USB Device</title>
+    <para>USB Host，即对于开发板来说，USB是Host端，所以，此时可以去插上一个U盘，对应的是USB Mass Storage的用法，所以，可以理解为：</para>
+    <para>开发板是USB Host = USB Mass Storage =开发板可以外接 U盘</para>
+    <para>而USB Device，即对于开发板来说，自己是作为USB的Device端。</para>
+    <para>而USB Device端，相对于USB Host来说，也叫USB Slave端。</para>
+    <para>此时的UBS Host就是PC端了，然后PC端连出一根USB线，接上开发板，然后开发板就是USB Device=USB Slave端了，就可以当做U盘用了。</para>
+    <para>即：</para>
+    <para><emphasis>开发板是USB Slave = USB Device = 开发板自己是PC上的U盘。</emphasis></para>
+    <para>更多关于USB方面的基本概念和逻辑，可以参考：</para>
+    <para><link xl:href="http://www.crifan.com/files/doc/docbook/usb_basic/release/htmls/">USB基础知识概论</link></para>
+</sect1>
+
+<sect1 xml:id="nic"><title>NIC</title>
+    <para>NIC，Network Interface Card，网络接口卡，即网卡。</para>
+    <para>NIC这个叫法，是之前在学习网络方面的知识的时候，遇到的，觉得虽然有点拗口，但是意义表述很明确，所以此处才用此NIC来表示网卡的。</para>
+</sect1>
+
+</chapter>
